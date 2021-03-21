@@ -13,9 +13,9 @@ It provides the follwing features:
 ```csharp
 var filterBuilder = new FilterBuilder();
 
-var costGreaterThan10 = filterBuilder.Get<Product>(@"[""Cost"", "">="", 100]").Compile();
+var costGreaterThanOrEqualTo100 = filterBuilder.Get<Product>(@"[""Cost"", "">="", 100]").Compile();
 
-var expensiveProducts = allProducts.Where(costGreaterThan100)
+var expensiveProducts = allProducts.Where(costGreaterThanOrEqualTo100)
 ```
 
 ## Register a custom condition operator
