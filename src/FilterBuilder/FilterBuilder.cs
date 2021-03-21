@@ -62,30 +62,34 @@ namespace FilterBuilder
             if (el.ValueKind != JsonValueKind.Array)
                 throw new Exception();
 
-            if (IsANotExpression(el))
+            else if (IsANotExpression(el))
                 return Expression.Not(GetExpression(@object, el[1]));
 
-            var @operator = el[1].GetString();
-
-            if (builtInGroupOperators.Contains(@operator))
-            {
+            else if (IsGroupExpression(el))
                 return GetGroupExpression(@object, el);
-            }
-            else if (builtInConditionOperators.Contains(@operator))
-            {
+
+            else if (IsConditionExpression(el))
                 return GetConditionExpression(@object, el);
-            }
-            else if (customOperators.ContainsKey(@operator))
-            {
-                return GetConditionExpression(@object, el);
-            }
+            
             else
-                throw new ArgumentOutOfRangeException(nameof(@operator), @operator, "Unknown operator");
+                throw new ArgumentOutOfRangeException("Unknown expression type");
         }
 
 
         bool IsANotExpression(JsonElement el)
             => el.GetArrayLength() == 2 && el[0].GetString() == "!";
+
+        bool IsGroupExpression(JsonElement el)
+        {
+            var @operator = el[1].GetString();
+            return builtInGroupOperators.Contains(@operator);
+        }
+
+        bool IsConditionExpression(JsonElement el)
+        {
+            var @operator = el[1].GetString();
+            return builtInConditionOperators.Contains(@operator) || customOperators.ContainsKey(@operator);
+        }
 
 
         Expression GetConditionExpression(ParameterExpression @object, JsonElement el)
@@ -146,6 +150,7 @@ namespace FilterBuilder
             {
                 // We need to make sure it has the correct type, so convert it.
                 // This would only work if there is a type coercion available (i.e. can't do string to int)
+
                 var parameterExpression = Expression.Convert(Expression.Constant(parameter), propertyExpression.Type);
 
                 if (@operator == "<>")
