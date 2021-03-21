@@ -22,7 +22,7 @@ namespace FilterBuilder.Tests
             };
 
             FilterBuilder builder = new();
-            var predicate = builder.Get<Product>(jsonFilter).Compile();
+            var predicate = builder.GetExpression<Product>(jsonFilter).Compile();
 
             var actualFilteredList = products.All.Where(predicate);
 
@@ -58,7 +58,7 @@ namespace FilterBuilder.Tests
                 return allowedValues.Contains(actualValue);
             });
 
-            var predicate = builder.Get<Product>(jsonFilter).Compile();
+            var predicate = builder.GetExpression<Product>(jsonFilter).Compile();
             var filteredList = products.All.Where(predicate);
 
             Assert.Equal(expectedFilteredList, filteredList);
@@ -77,7 +77,7 @@ namespace FilterBuilder.Tests
             };
 
             FilterBuilder builder = new();
-            var predicate = builder.Get<Product>(jsonFilter).Compile();
+            var predicate = builder.GetExpression<Product>(jsonFilter).Compile();
 
             var actualFilteredList = products.All.Where(predicate);
 

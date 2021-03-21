@@ -32,7 +32,7 @@ namespace FilterBuilder
 
         readonly Dictionary<string, CustomConditionOperator> customOperators = new Dictionary<string, CustomConditionOperator>();
 
-        public Expression<Func<T, bool>> Get<T>(string jsonFilter)
+        public Expression<Func<T, bool>> GetExpression<T>(string jsonFilter)
         {
 
             var json = JsonDocument.Parse(jsonFilter);
@@ -66,9 +66,7 @@ namespace FilterBuilder
 
             if (builtInGroupOperators.Contains(@operator))
             {
-                var conditionA = GetExpression(@object, el[0]);
-                var conditionB = GetExpression(@object, el[2]);
-                return GetGroupExpression(conditionA, @operator, conditionB);
+                return GetGroupExpression(@object, el);
             }
             else if (builtInConditionOperators.Contains(@operator))
             {
@@ -203,14 +201,21 @@ namespace FilterBuilder
 
         }
 
-        Expression GetGroupExpression(Expression left, string @operator, Expression right)
+        Expression GetGroupExpression(ParameterExpression @object, JsonElement el, int index = 0)
         {
 
+            if (index == el.GetArrayLength()-1)
+                return GetExpression(@object, el[index]);
+
+            var conditionA = GetExpression(@object, el[index]);
+            var @operator = el[index + 1].GetString();
+            var conditionB = GetGroupExpression(@object, el, index+2);
+
             if (@operator == "and")
-                return Expression.MakeBinary(ExpressionType.And, left, right);
+                return Expression.MakeBinary(ExpressionType.And, conditionA, conditionB);
 
             else if (@operator == "or")
-                return Expression.MakeBinary(ExpressionType.Or, left, right);
+                return Expression.MakeBinary(ExpressionType.Or, conditionA, conditionB);
 
             else
                 throw new NotImplementedException();
