@@ -32,7 +32,7 @@ namespace FilterBuilder
 
         readonly Dictionary<string, CustomConditionOperator> customOperators = new Dictionary<string, CustomConditionOperator>();
 
-        public Expression<Func<T, bool>> Get<T>(string jsonFilter)
+        public Expression<Func<T, bool>> GetExpression<T>(string jsonFilter)
         {
 
             var json = JsonDocument.Parse(jsonFilter);
@@ -61,6 +61,9 @@ namespace FilterBuilder
         {
             if (el.ValueKind != JsonValueKind.Array)
                 throw new Exception();
+
+            if (el.GetArrayLength() == 2 && el[0].GetString() == "!")
+                return Expression.Not(GetExpression(@object, el[1]));
 
             var @operator = el[1].GetString();
 

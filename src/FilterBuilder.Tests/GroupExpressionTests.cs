@@ -50,7 +50,7 @@ namespace FilterBuilder.Tests
                 return allowedValues.Contains(actualValue);
             });
 
-            var predicate = builder.Get<Product>(jsonFilter).Compile();
+            var predicate = builder.GetExpression<Product>(jsonFilter).Compile();
             var filteredLst = products.All.Where(predicate);
 
         }

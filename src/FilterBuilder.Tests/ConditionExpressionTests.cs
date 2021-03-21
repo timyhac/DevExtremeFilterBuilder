@@ -22,7 +22,7 @@ namespace FilterBuilder.Tests
             };
 
             FilterBuilder builder = new();
-            var predicate = builder.Get<Product>(jsonFilter).Compile();
+            var predicate = builder.GetExpression<Product>(jsonFilter).Compile();
 
             var actualFilteredList = products.All.Where(predicate);
 
@@ -41,9 +41,9 @@ namespace FilterBuilder.Tests
                 products.Product0, products.Product1, products.Product2, products.Product11, products.Product12, products.Product13
             };
 
-            FilterBuilder builder = new();
+            FilterBuilder filterBuilder = new();
 
-            builder.RegisterOperator("anyof",
+            filterBuilder.RegisterOperator("anyof",
             (propertyName, parameterElement) =>
             {
                 return parameterElement.EnumerateArray()
@@ -51,14 +51,14 @@ namespace FilterBuilder.Tests
                             .Select(x => Enum.Parse<ProductCategory>(x))
                             .ToArray();
             },
-            (value, parameter) =>
+            (object value, object parameter) =>
             {
                 var allowedValues = (ProductCategory[])parameter;
                 var actualValue = (ProductCategory)value;
                 return allowedValues.Contains(actualValue);
             });
 
-            var predicate = builder.Get<Product>(jsonFilter).Compile();
+            var predicate = filterBuilder.GetExpression<Product>(jsonFilter).Compile();
             var filteredList = products.All.Where(predicate);
 
             Assert.Equal(expectedFilteredList, filteredList);
@@ -77,7 +77,7 @@ namespace FilterBuilder.Tests
             };
 
             FilterBuilder builder = new();
-            var predicate = builder.Get<Product>(jsonFilter).Compile();
+            var predicate = builder.GetExpression<Product>(jsonFilter).Compile();
 
             var actualFilteredList = products.All.Where(predicate);
 
