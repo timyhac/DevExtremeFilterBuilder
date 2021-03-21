@@ -6,7 +6,7 @@ using Xunit;
 
 namespace FilterBuilder.Tests
 {
-    public class BasicTests : IDisposable
+    public class EntityFrameworkTests : IDisposable
     {
 
         readonly ProductsContext dbContext;
@@ -28,7 +28,7 @@ namespace FilterBuilder.Tests
         readonly Product item13 = new() { CurrentInventory = 2, Cost = 199.99f, Name = "Deluxe Office Chair", Category = ProductCategory.Furniture };
 
 
-        public BasicTests()
+        public EntityFrameworkTests()
         {
             items = new() { item0, item1, item2, item3, item4, item5, item6, item7, item8, item9, item10, item11, item12, item13 };
 
@@ -43,104 +43,6 @@ namespace FilterBuilder.Tests
         {
             dbContext.Products.RemoveRange(dbContext.Products);
             dbContext.SaveChanges();
-        }
-
-
-        [Fact]
-        public void Test1()
-        {
-
-            var jsonFilter = @"
-[
-    [""CurrentInventory"", ""anyof"", [8, 12]],
-    ""or"",
-    [
-        [""Name"", ""contains"", ""HD""],
-        ""and"",
-        [""Cost"", ""<"", 200]
-    ]
-]";
-
-
-            var list = new List<Product>
-            {
-                
-            };
-
-
-            FilterBuilder builder = new();
-
-            builder.RegisterOperator("anyof",
-            (propertyName, parameterElement) => {
-
-                return parameterElement.EnumerateArray()
-                            .Select(item => item.GetInt32())
-                            .ToArray();
-
-            }, (value, parameter) =>
-            {
-                var allowedValues = (int[])parameter;
-                var actualValue = (int)value;
-                return allowedValues.Contains(actualValue);
-            });
-
-            var predicate = builder.Get<Product>(jsonFilter).Compile();
-            var filteredLst = list.Where(predicate);
-
-        }
-
-        [Fact]
-        public void Test2()
-        {
-
-            var jsonFilter = @"[""Name"", ""endswith"", ""e""]";
-
-            var expectedFilteredList = new List<Product>()
-            {
-                item0, item2, item11
-            };
-
-            FilterBuilder builder = new();
-            var predicate = builder.Get<Product>(jsonFilter).Compile();
-
-            var actualFilteredList = items.Where(predicate);
-
-            Assert.Equal(expectedFilteredList, actualFilteredList);
-
-        }
-
-        [Fact]
-        public void Test3()
-        {
-
-            var jsonFilter = @"[""Category"", ""anyof"", [""Electronics"", ""Furniture""]]";
-
-
-            var list = new List<Product>
-            {
-
-            };
-
-
-            FilterBuilder builder = new();
-
-            builder.RegisterOperator("anyof",
-            (propertyName, parameterElement) =>
-            {
-                return parameterElement.EnumerateArray()
-                            .Select(item => item.GetString())
-                            .ToArray();
-            },
-            (value, parameter) =>
-            {
-                var allowedValues = (ProductCategory[])parameter;
-                var actualValue = Enum.Parse<ProductCategory>((string)value);
-                return allowedValues.Contains(actualValue);
-            });
-
-            var predicate = builder.Get<Product>(jsonFilter).Compile();
-            var filteredLst = list.Where(predicate);
-
         }
 
         [Fact]

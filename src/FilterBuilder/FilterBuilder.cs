@@ -21,6 +21,7 @@ namespace FilterBuilder
             "notcontains",
             "startswith",
             "endswith",
+            "between"
         };
 
         string[] builtInGroupOperators = new[]
@@ -94,7 +95,11 @@ namespace FilterBuilder
         object GetParameter(string propertyOrFieldName, string @operator, JsonElement el)
         {
 
-            if (builtInConditionOperators.Contains(@operator))
+            if(@operator == "between")
+            {
+                return new[] { el[0].GetDouble(), el[1].GetDouble() };
+            }
+            else if (builtInConditionOperators.Contains(@operator))
             {
                 switch (el.ValueKind)
                 {
@@ -121,7 +126,18 @@ namespace FilterBuilder
         {
             var propertyExpression = Expression.PropertyOrField(@object, propertyOrFieldName);
 
-            if (builtInConditionOperators.Contains(@operator))
+            if(@operator == "between")
+            {
+                var lowerBound = ((double[])parameter)[0];
+                var upperBound = ((double[])parameter)[1];
+                var lowerBoundExpression = Expression.Convert(Expression.Constant(lowerBound), propertyExpression.Type);
+                var upperBoundExpression = Expression.Convert(Expression.Constant(upperBound), propertyExpression.Type);
+                return Expression.And(
+                    Expression.GreaterThan(propertyExpression, lowerBoundExpression),
+                    Expression.LessThan(propertyExpression, upperBoundExpression)
+                    );
+            }
+            else if (builtInConditionOperators.Contains(@operator))
             {
                 // We need to make sure it has the correct type, so convert it.
                 // This would only work if there is a type coercion available (i.e. can't do string to int)
