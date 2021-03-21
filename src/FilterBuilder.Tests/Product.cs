@@ -33,7 +33,7 @@ namespace FilterBuilder.Tests
         public readonly Product Product9 = new() { CurrentInventory = 2, Cost = 2125f, Name = "SuperLCD 70", Category = ProductCategory.Electronics };
         public readonly Product Product10 = new() { CurrentInventory = 1, Cost = 70f, Name = "DesktopLED 19", Category = ProductCategory.Electronics };
         public readonly Product Product11 = new() { CurrentInventory = 3, Cost = 120f, Name = "Table", Category = ProductCategory.Furniture };
-        public readonly Product Product12 = new() { CurrentInventory = 8, Cost = 70f, Name = "Chair", Category = ProductCategory.Furniture };
+        public readonly Product Product12 = new() { CurrentInventory = 8, Cost = 72f, Name = "Chair", Category = ProductCategory.Furniture };
         public readonly Product Product13 = new() { CurrentInventory = 2, Cost = 199.99f, Name = "Deluxe Office Chair", Category = ProductCategory.Furniture };
 
         public Products()

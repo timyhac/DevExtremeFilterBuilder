@@ -57,7 +57,7 @@ namespace FilterBuilder.Tests
             };
 
             FilterBuilder builder = new();
-            var predicate = builder.Get<Product>(jsonFilter);
+            var predicate = builder.GetExpression<Product>(jsonFilter);
 
 
             var actualList = dbContext.Products.Where(predicate).ToList();
