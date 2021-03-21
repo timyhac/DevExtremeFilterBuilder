@@ -13,7 +13,7 @@ It provides the follwing features:
 ```csharp
 var filterBuilder = new FilterBuilder();
 
-var costGreaterThanOrEqualTo100 = filterBuilder.Get<Product>(@"[""Cost"", "">="", 100]").Compile();
+var costGreaterThanOrEqualTo100 = filterBuilder.GetExpression<Product>(@"[""Cost"", "">="", 100]").Compile();
 
 var expensiveProducts = allProducts.Where(costGreaterThanOrEqualTo100)
 ```
@@ -30,3 +30,22 @@ In order to register a custom operator, we need to define three things:
 
 3. Parsing of the parameter into a CLR object.
    This is a `Func` used to turn the JSON object into the parameter.
+
+```csharp
+FilterBuilder filterBuilder = new();
+
+filterBuilder.RegisterOperator("anyof",
+(string propertyName, JsonElement parameterElement) =>                 // Defines the parameter parser -> turns a JSON element into a CLR object that is used by ...
+{
+    return parameterElement.EnumerateArray()
+                .Select(x => x.GetString())
+                .Select(x => Enum.Parse<ProductCategory>(x))
+                .ToArray();
+},
+(object propertyValue, object operatorParameter) =>                   // ... the operator implementation, which takes the value of the property, and the parameter created
+{                                                                     // in the above Func
+    var allowedValues = (ProductCategory[])operatorParameter;
+    var actualValue = (ProductCategory)propertyValue;
+    return allowedValues.Contains(actualValue);
+});
+```
