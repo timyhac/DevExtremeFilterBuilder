@@ -2,17 +2,15 @@ name: Build and publish nuget package
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
   build:
 
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v2
-      with:
-        lfs: true 
     
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
@@ -58,3 +56,4 @@ jobs:
 
           # Flag to toggle pushing symbols along with nuget package to the server, disabled by default
           # INCLUDE_SYMBOLS: false
+

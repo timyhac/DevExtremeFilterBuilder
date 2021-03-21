@@ -58,7 +58,7 @@ namespace FilterBuilder.Tests
                 return allowedValues.Contains(actualValue);
             });
 
-            var predicate = filterBuilder.GetExpression<Product>(jsonFilter).Compile();
+            var predicate = builder.GetExpression<Product>(jsonFilter).Compile();
             var filteredList = products.All.Where(predicate);
 
             Assert.Equal(expectedFilteredList, filteredList);
