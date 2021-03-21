@@ -62,7 +62,7 @@ namespace FilterBuilder
             if (el.ValueKind != JsonValueKind.Array)
                 throw new Exception();
 
-            if (el.GetArrayLength() == 2 && el[0].GetString() == "!")
+            if (IsANotExpression(el))
                 return Expression.Not(GetExpression(@object, el[1]));
 
             var @operator = el[1].GetString();
@@ -82,6 +82,10 @@ namespace FilterBuilder
             else
                 throw new ArgumentOutOfRangeException(nameof(@operator), @operator, "Unknown operator");
         }
+
+
+        bool IsANotExpression(JsonElement el)
+            => el.GetArrayLength() == 2 && el[0].GetString() == "!";
 
 
         Expression GetConditionExpression(ParameterExpression @object, JsonElement el)
