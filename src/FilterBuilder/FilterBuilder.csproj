@@ -2,6 +2,15 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>DevExtremeFilterBuilder</AssemblyName>
+    <RootNamespace>FilterBuilder</RootNamespace>
+    <PackageId>DevExtremeFilterBuilder</PackageId>
+    <Version>0.0.1-alpha</Version>
+    <Authors>timyhac</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageDescription>Creates LINQ Expressions from DevExtreme's FilterBuilder filter specification object</PackageDescription>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageProjectUrl>https://github.com/timyhac/DevExtremeFilterBuilder</PackageProjectUrl>
   </PropertyGroup>
 
   <ItemGroup>

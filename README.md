@@ -1,6 +1,6 @@
 # DevExtreme FilterBuilder
 
-This library provides a single class which turns a [specification object](https://en.wikipedia.org/wiki/Specification_pattern) produced by DevExtreme's FilterBuilder into a [LINQ Expression](https://docs.microsoft.com/en-us/dotnet/api/system.linq.expressions.expression) that can be used by any LINQ provider.
+This library provides a single class which turns a [specification object](https://en.wikipedia.org/wiki/Specification_pattern) produced by [DevExtreme's FilterBuilder component](https://js.devexpress.com/Documentation/ApiReference/UI_Components/dxFilterBuilder/) into a [LINQ Expression](https://docs.microsoft.com/en-us/dotnet/api/system.linq.expressions.expression) that can be used by any LINQ provider.
 
 It provides the follwing features:
 
@@ -12,6 +12,7 @@ It provides the follwing features:
 
 ```csharp
 var filterBuilder = new FilterBuilder();
+
 var costGreaterThan10 = filterBuilder.Get<Product>(@"[""Cost"", "">="", 100]").Compile();
 
 var expensiveProducts = allProducts.Where(costGreaterThan100)
