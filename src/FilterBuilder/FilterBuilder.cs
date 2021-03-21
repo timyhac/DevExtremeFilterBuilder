@@ -62,6 +62,9 @@ namespace FilterBuilder
             if (el.ValueKind != JsonValueKind.Array)
                 throw new Exception();
 
+            if (el.GetArrayLength() == 2 && el[0].GetString() == "!")
+                return Expression.Not(GetExpression(@object, el[1]));
+
             var @operator = el[1].GetString();
 
             if (builtInGroupOperators.Contains(@operator))
