@@ -31,7 +31,7 @@ var expensiveProducts = allProducts.Where(costGreaterThanOrEqualTo100)
 ```
 
 
-## Register a custom condition operator parameter parser
+## Register a custom condition parameter parser
 
 The specification object provides parameters as a JSON Element. These elements have default conversions to CLR values (e.g. `Number` -> `Double`), but it may be more convenient to convert them to custom types.
 
