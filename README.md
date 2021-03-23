@@ -10,6 +10,18 @@ It provides the follwing features:
 
 ## Basic usage
 
+The user may specify a filter that gets all products where the cost is greater than or equal to 100.
+
+The property we wish to filter on is `Cost`, the operator is `>=` and the parameter is `100`.
+
+This filter would be output by the DevExtreme FilterBuilder component as the following JSON string:
+
+```json
+["Cost", ">=", 100]
+```
+
+To turn this JSON string into a filter, we provide the string to the FilterBuilder class, which returns an `Expression`. This is passed directly to a LINQ provider (i.e. an `IQueryable`) which performs the filtering.
+
 ```csharp
 var filterBuilder = new FilterBuilder();
 
@@ -18,34 +30,62 @@ var costGreaterThanOrEqualTo100 = filterBuilder.GetExpression<Product>(@"[""Cost
 var expensiveProducts = allProducts.Where(costGreaterThanOrEqualTo100)
 ```
 
+
+## Register a custom condition operator parameter parser
+
+The specification object provides parameters as a JSON Element. These elements have default conversions to CLR values (e.g. `Number` -> `Double`), but it may be more convenient to convert them to custom types.
+
+```json
+["Category", "=", "Food"]
+```
+
+The following c# snippet shows how to turn a JSON Element into the parameter used by the condition operator.
+```csharp
+filterBuilder.RegisterParser("Category", el => Enum.Parse<ProductCategory>(el.GetString()));
+```
+
+Depending on the operator, this parameter might be encoded as an array, other times as a single string - to make your parser more flexible it might make sense to customise the logic as appropriate. In this case I've opted to provide either a single `ProductCategory` or an array of `ProductCategory` depending on the JSON type.
+
+```csharp
+filterBuilder.RegisterParser("Category", el =>
+{
+    if (el.ValueKind == System.Text.Json.JsonValueKind.Array)
+        return el.EnumerateArray()
+            .Select(x => x.GetString())
+            .Select(x => Enum.Parse<ProductCategory>(x))
+            .ToArray();
+
+    else if (el.ValueKind == System.Text.Json.JsonValueKind.String)
+        return Enum.Parse<ProductCategory>(el.GetString());
+
+    else
+        throw new ArgumentOutOfRangeException();
+
+});
+```
+
+
 ## Register a custom condition operator
 
-DevExtreme Filter Builder supports the ability to define your own operators.
+DevExtreme Filter Builder supports the ability to define your own operators. For example, the anyof operator which checks that `Category` is any of the provided values.
 
-In order to register a custom operator, we need to define three things:
+```json
+["Category", "anyof", ["Food", "Furniture"]]
+```
+
+In order to register a custom operator, we need to define two things:
 1. The name of the operator (e.g. "anyof")
 
 2. The operator implementation.
    This is a `Func` which takes the value of the property, and the value of the parameter, performs some calculation, and returns a boolean result.
 
-3. Parsing of the parameter into a CLR object.
-   This is a `Func` used to turn the JSON object into the parameter.
+Because the property value and parameter is typed as an object, it might be necessary to cast them to some other type first.
 
 ```csharp
-FilterBuilder filterBuilder = new();
-
-filterBuilder.RegisterOperator("anyof",
-(string propertyName, JsonElement parameterElement) =>                 // Defines the parameter parser -> turns a JSON element into a CLR object that is used by ...
+filterBuilder.RegisterOperator("anyof", (object value, object parameter) =>                   
 {
-    return parameterElement.EnumerateArray()
-                .Select(x => x.GetString())
-                .Select(x => Enum.Parse<ProductCategory>(x))
-                .ToArray();
-},
-(object propertyValue, object operatorParameter) =>                   // ... the operator implementation, which takes the value of the property, and the parameter created
-{                                                                     // in the above Func
-    var allowedValues = (ProductCategory[])operatorParameter;
-    var actualValue = (ProductCategory)propertyValue;
-    return allowedValues.Contains(actualValue);
+   var allowedValues = ((object[])parameter).Select(x => x.ToString());
+   var typedValue = value.ToString();
+   return allowedValues.Contains(typedValue);
 });
 ```
