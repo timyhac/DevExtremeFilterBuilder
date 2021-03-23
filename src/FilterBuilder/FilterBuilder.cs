@@ -9,28 +9,50 @@ namespace FilterBuilder
     public class FilterBuilder
     {
 
-        string[] builtInConditionOperators = new[]
-        {
-            "<",
-            ">",
-            "<=",
-            ">=",
-            "<>",
-            "=",
-            "contains",
-            "notcontains",
-            "startswith",
-            "endswith",
-            "between"
-        };
-
         string[] builtInGroupOperators = new[]
         {
             "and",
             "or"
         };
 
-        readonly Dictionary<string, CustomConditionOperator> customOperators = new Dictionary<string, CustomConditionOperator>();
+
+        readonly Dictionary<string, ConditionExpression> conditionOperators;
+        readonly Dictionary<string, Func<JsonElement, object>> customParsers = new Dictionary<string, Func<JsonElement, object>>();
+
+
+        public FilterBuilder()
+        {
+
+            var stringContainsMethodInfo = typeof(string).GetMethod("Contains", new[] { typeof(string) });
+            var stringStartsWithMethodInfo = typeof(string).GetMethod("StartsWith", new[] { typeof(string) });
+            var stringEndsWithMethodInfo = typeof(string).GetMethod("EndsWith", new[] { typeof(string) });
+
+            conditionOperators = new Dictionary<string, ConditionExpression>()
+            {
+                {  "<",             ConditionExpression.Make((a,b) => Expression.LessThan(a,b))},
+                {  "<=",            ConditionExpression.Make((a,b) => Expression.LessThanOrEqual(a,b))},
+                {  ">",             ConditionExpression.Make((a,b) => Expression.GreaterThan(a,b))},
+                {  ">=",            ConditionExpression.Make((a,b) => Expression.GreaterThanOrEqual(a,b))},
+                {  "=",             ConditionExpression.Make((a,b) => Expression.Equal(a,b))},
+                {  "<>",            ConditionExpression.Make((a,b) => Expression.NotEqual(a,b))},
+                {  "contains",      ConditionExpression.Make((a,b) => Expression.Call(a, stringContainsMethodInfo, b))},
+                {  "notcontains",   ConditionExpression.Make((a,b) => Expression.Not(Expression.Call(a, stringContainsMethodInfo, b)))},
+                {  "startswith",    ConditionExpression.Make((a,b) => Expression.Call(a, stringStartsWithMethodInfo, b))},
+                {  "endswith",      ConditionExpression.Make((a,b) => Expression.Call(a, stringEndsWithMethodInfo, b))},
+                {  "between",       ConditionExpression.Make((a,b) =>
+                    {
+                        var parameters = ((object[])b).Select(x => (double)x).ToArray();
+                        var value = Convert.ToDouble(a);
+
+                        var lowerBound = parameters[0];
+                        var upperBound = parameters[1];
+                        return lowerBound < value && value < upperBound;
+                    })},
+            };
+
+
+
+        }
 
         public Expression<Func<T, bool>> GetExpression<T>(string jsonFilter)
         {
@@ -47,15 +69,14 @@ namespace FilterBuilder
         }
 
 
-        public void RegisterOperator(string @operator, Func<string, JsonElement, object> parameterParser, Func<object, object, bool> operatorFunction)
-        {
-            customOperators.Add(@operator, new CustomConditionOperator()
-            {
-                Name = @operator,
-                ParameterParser = parameterParser,
-                Method = operatorFunction
-            });
-        }
+        public void RegisterOperator(string @operator, Func<object, object, bool> operatorFunction)
+            => conditionOperators.Add(@operator, ConditionExpression.Make(operatorFunction));
+
+
+        public void RegisterParser(string parameterName, Func<JsonElement, object> parserFunction)
+            => customParsers.Add(parameterName, parserFunction);
+
+
 
         Expression GetExpression(ParameterExpression @object, JsonElement el)
         {
@@ -74,10 +95,12 @@ namespace FilterBuilder
             else
                 throw new ArgumentOutOfRangeException("Unknown expression type");
         }
-
-
+        
+        
         bool IsANotExpression(JsonElement el)
             => el.GetArrayLength() == 2 && el[0].GetString() == "!";
+
+
 
         bool IsGroupExpression(JsonElement el)
         {
@@ -85,10 +108,12 @@ namespace FilterBuilder
             return builtInGroupOperators.Contains(@operator);
         }
 
+        
+
         bool IsConditionExpression(JsonElement el)
         {
             var @operator = el[1].GetString();
-            return builtInConditionOperators.Contains(@operator) || customOperators.ContainsKey(@operator);
+            return conditionOperators.ContainsKey(@operator);
         }
 
 
@@ -96,121 +121,45 @@ namespace FilterBuilder
         {
             var propertyOrFieldName = el[0].GetString();
             string @operator = el[1].GetString();
-            object parameter = GetParameter(propertyOrFieldName, @operator, el[2]);
+            object parameter = GetParameter(propertyOrFieldName, el[2]);
 
             return GetConditionExpression(@object, @operator, propertyOrFieldName, parameter);
         }
 
-        object GetParameter(string propertyOrFieldName, string @operator, JsonElement el)
+        object GetParameter(string propertyOrFieldName, JsonElement el)
         {
 
-            if(@operator == "between")
-            {
-                return new[] { el[0].GetDouble(), el[1].GetDouble() };
-            }
-            else if (builtInConditionOperators.Contains(@operator))
-            {
-                switch (el.ValueKind)
-                {
-                    case JsonValueKind.String:      return el.GetString();
-                    case JsonValueKind.Number:      return el.GetDouble();
-                    case JsonValueKind.True:        return true;
-                    case JsonValueKind.False:       return false;
-                    case JsonValueKind.Null:        return null;
-                    default:
-                        throw new NotImplementedException();
-                }
-            }
-
-            else if (customOperators.ContainsKey(@operator))
-                return customOperators[@operator].ParameterParser(propertyOrFieldName, el);
+            if (customParsers.ContainsKey(propertyOrFieldName))
+                return customParsers[propertyOrFieldName](el);
 
             else
-                throw new ArgumentOutOfRangeException("Unknown operator");
+                return ParseConstant(el);
 
         }
 
+        object ParseConstant(JsonElement el)
+        {
+            switch (el.ValueKind)
+            {
+                case JsonValueKind.Array:       return el.EnumerateArray().Select(item => ParseConstant(item)).ToArray();
+                case JsonValueKind.String:      return el.GetString();
+                case JsonValueKind.Number:      return el.GetDouble();
+                case JsonValueKind.True:        return true;
+                case JsonValueKind.False:       return false;
+                case JsonValueKind.Null:        return null;
+                case JsonValueKind.Undefined:
+                case JsonValueKind.Object:
+                default:
+                    throw new NotImplementedException();
+                    break;
+            }
+        }
 
         Expression GetConditionExpression(ParameterExpression @object, string @operator, string propertyOrFieldName, object parameter)
         {
             var propertyExpression = Expression.PropertyOrField(@object, propertyOrFieldName);
-
-            if(@operator == "between")
-            {
-                var lowerBound = ((double[])parameter)[0];
-                var upperBound = ((double[])parameter)[1];
-                var lowerBoundExpression = Expression.Convert(Expression.Constant(lowerBound), propertyExpression.Type);
-                var upperBoundExpression = Expression.Convert(Expression.Constant(upperBound), propertyExpression.Type);
-                return Expression.And(
-                    Expression.GreaterThan(propertyExpression, lowerBoundExpression),
-                    Expression.LessThan(propertyExpression, upperBoundExpression)
-                    );
-            }
-            else if (builtInConditionOperators.Contains(@operator))
-            {
-                // We need to make sure it has the correct type, so convert it.
-                // This would only work if there is a type coercion available (i.e. can't do string to int)
-
-                var parameterExpression = Expression.Convert(Expression.Constant(parameter), propertyExpression.Type);
-
-                if (@operator == "<>")
-                    return Expression.MakeBinary(ExpressionType.NotEqual, propertyExpression, parameterExpression);
-
-                else if (@operator == "=")
-                    return Expression.MakeBinary(ExpressionType.Equal, propertyExpression, parameterExpression);
-
-                else if (@operator == "<")
-                    return Expression.MakeBinary(ExpressionType.LessThan, propertyExpression, parameterExpression);
-
-                else if (@operator == "<=")
-                    return Expression.MakeBinary(ExpressionType.LessThanOrEqual, propertyExpression, parameterExpression);
-
-                else if (@operator == ">")
-                    return Expression.MakeBinary(ExpressionType.GreaterThan, propertyExpression, parameterExpression);
-
-                else if (@operator == ">=")
-                    return Expression.MakeBinary(ExpressionType.GreaterThanOrEqual, propertyExpression, parameterExpression);
-
-                else if (@operator == "contains")
-                {
-                    var stringContainsMethodInfo = typeof(string).GetMethod("Contains", new[] { typeof(string) });
-                    return Expression.Call(propertyExpression, stringContainsMethodInfo, parameterExpression);
-                }
-
-                else if (@operator == "notcontains")
-                {
-                    var stringContainsMethodInfo = typeof(string).GetMethod("Contains", new[] { typeof(string) });
-                    var containsExpression = Expression.Call(propertyExpression, stringContainsMethodInfo, parameterExpression);
-                    return Expression.Not(containsExpression);
-                }
-
-                else if (@operator == "startswith")
-                {
-                    var stringContainsMethodInfo = typeof(string).GetMethod("StartsWith", new[] { typeof(string) });
-                    return Expression.Call(propertyExpression, stringContainsMethodInfo, parameterExpression);
-                }
-
-                else if (@operator == "endswith")
-                {
-                    var stringContainsMethodInfo = typeof(string).GetMethod("EndsWith", new[] { typeof(string) });
-                    return Expression.Call(propertyExpression, stringContainsMethodInfo, parameterExpression);
-                }
-
-                else
-                    throw new NotImplementedException();
-            }
-            else if (customOperators.ContainsKey(@operator))
-            {
-                Expression<Func<object, object, bool>> methodExpression = (propertyValue, parameterValue) => customOperators[@operator].Method(propertyValue, parameterValue);
-                var parameterExpression = Expression.Convert(Expression.Constant(parameter), typeof(object));
-                var propertyExpressionAsObject = Expression.Convert(propertyExpression, typeof(object));
-
-                return Expression.Invoke(methodExpression, propertyExpressionAsObject, parameterExpression);
-            }
-
-            else
-                throw new NotImplementedException();
-
+            var parameterExpression = Expression.Constant(parameter);
+            return conditionOperators[@operator].Make(propertyExpression, parameterExpression);
         }
 
         Expression GetGroupExpression(ParameterExpression @object, JsonElement el, int index = 0)
@@ -231,14 +180,6 @@ namespace FilterBuilder
 
             else
                 throw new NotImplementedException();
-
-        }
-
-        class CustomConditionOperator
-        {
-            public string Name { get; set; }
-            public Func<string, JsonElement, object> ParameterParser { get; set; }
-            public Func<object, object, bool> Method { get; set; }
 
         }
 

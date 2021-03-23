@@ -43,14 +43,12 @@ namespace FilterBuilder.Tests
 
             FilterBuilder filterBuilder = new();
 
+            filterBuilder.RegisterParser("Category", el => el.EnumerateArray()
+                                                             .Select(item => Enum.Parse<ProductCategory>(item.GetString()))
+                                                             .ToArray()
+                                                             );
+
             filterBuilder.RegisterOperator("anyof",
-            (propertyName, parameterElement) =>
-            {
-                return parameterElement.EnumerateArray()
-                            .Select(x => x.GetString())
-                            .Select(x => Enum.Parse<ProductCategory>(x))
-                            .ToArray();
-            },
             (object value, object parameter) =>
             {
                 var allowedValues = (ProductCategory[])parameter;
