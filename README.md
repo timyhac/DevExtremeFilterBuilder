@@ -4,8 +4,8 @@ This library provides a single class which turns a [specification object](https:
 
 It provides the follwing features:
 
-* Support for all built-in operators with simple types.
-* Support for custom operators.
+* Support for all built-in operators.
+* Support for custom condition operators.
 
 
 ## Basic usage
