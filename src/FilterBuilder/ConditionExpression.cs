@@ -10,7 +10,9 @@ namespace FilterBuilder
 
         ConditionExpression(Func<Expression, Expression, Expression> func) => _func = func;
 
-        public static ConditionExpression Make(Func<Expression, Expression, Expression> func)
+        public static ConditionExpression Make(Func<Expression, Expression, Expression> func) => new ConditionExpression(func);
+
+        public static ConditionExpression MakeWithTypeCoercion(Func<Expression, Expression, Expression> func)
         {
             return new ConditionExpression((property, param) =>
             {

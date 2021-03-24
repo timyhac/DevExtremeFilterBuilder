@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using Xunit;
 
 namespace FilterBuilder.Tests
@@ -70,6 +72,43 @@ namespace FilterBuilder.Tests
         {
             bool areSame = !A.Except(B).Any() && A.Count() == B.Count();
             return areSame;
+        }
+
+        [Fact]
+        public void Custom_condition_operator()
+        {
+
+            var jsonFilter = @"[""Category"", ""anyof"", [""Food"", ""Furniture""]]";
+
+            var expectedFilteredList = new List<Product>()
+            {
+                item0, item1, item2, item11, item12, item13
+            };
+
+            FilterBuilder builder = new();
+
+            builder.RegisterParser("Category", el => el.EnumerateArray().Select(x => (object)Enum.Parse<ProductCategory>(x.GetString())).ToArray());
+            builder.RegisterOperator("anyof",
+            (Expression value, Expression parameter) =>
+            {
+                var method = typeof(Enumerable)
+                               .GetMethods()
+                               .Where(m => m.Name == "Contains")
+                               .Single(m => m.GetParameters().Length == 2)
+                               .MakeGenericMethod(typeof(object));
+
+                var v = Expression.Convert(value, typeof(object));
+                return Expression.Call(method, parameter, v);
+
+            });
+
+
+            var predicate = builder.GetExpression<Product>(jsonFilter);
+
+            var actualList = dbContext.Products.Where(predicate);
+
+            Assert.True(ContainSameElements(expectedFilteredList, actualList));
+
         }
     }
 }

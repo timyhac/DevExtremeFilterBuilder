@@ -29,16 +29,16 @@ namespace FilterBuilder
 
             conditionOperators = new Dictionary<string, ConditionExpression>()
             {
-                {  "<",             ConditionExpression.Make((a,b) => Expression.LessThan(a,b))},
-                {  "<=",            ConditionExpression.Make((a,b) => Expression.LessThanOrEqual(a,b))},
-                {  ">",             ConditionExpression.Make((a,b) => Expression.GreaterThan(a,b))},
-                {  ">=",            ConditionExpression.Make((a,b) => Expression.GreaterThanOrEqual(a,b))},
-                {  "=",             ConditionExpression.Make((a,b) => Expression.Equal(a,b))},
-                {  "<>",            ConditionExpression.Make((a,b) => Expression.NotEqual(a,b))},
-                {  "contains",      ConditionExpression.Make((a,b) => Expression.Call(a, stringContainsMethodInfo, b))},
-                {  "notcontains",   ConditionExpression.Make((a,b) => Expression.Not(Expression.Call(a, stringContainsMethodInfo, b)))},
-                {  "startswith",    ConditionExpression.Make((a,b) => Expression.Call(a, stringStartsWithMethodInfo, b))},
-                {  "endswith",      ConditionExpression.Make((a,b) => Expression.Call(a, stringEndsWithMethodInfo, b))},
+                {  "<",             ConditionExpression.MakeWithTypeCoercion((a,b) => Expression.LessThan(a,b))},
+                {  "<=",            ConditionExpression.MakeWithTypeCoercion((a,b) => Expression.LessThanOrEqual(a,b))},
+                {  ">",             ConditionExpression.MakeWithTypeCoercion((a,b) => Expression.GreaterThan(a,b))},
+                {  ">=",            ConditionExpression.MakeWithTypeCoercion((a,b) => Expression.GreaterThanOrEqual(a,b))},
+                {  "=",             ConditionExpression.MakeWithTypeCoercion((a,b) => Expression.Equal(a,b))},
+                {  "<>",            ConditionExpression.MakeWithTypeCoercion((a,b) => Expression.NotEqual(a,b))},
+                {  "contains",      ConditionExpression.MakeWithTypeCoercion((a,b) => Expression.Call(a, stringContainsMethodInfo, b))},
+                {  "notcontains",   ConditionExpression.MakeWithTypeCoercion((a,b) => Expression.Not(Expression.Call(a, stringContainsMethodInfo, b)))},
+                {  "startswith",    ConditionExpression.MakeWithTypeCoercion((a,b) => Expression.Call(a, stringStartsWithMethodInfo, b))},
+                {  "endswith",      ConditionExpression.MakeWithTypeCoercion((a,b) => Expression.Call(a, stringEndsWithMethodInfo, b))},
                 {  "between",       ConditionExpression.Make((a,b) =>
                     {
                         var parameters = ((object[])b).Select(x => (double)x).ToArray();
@@ -70,6 +70,9 @@ namespace FilterBuilder
 
 
         public void RegisterOperator(string @operator, Func<object, object, bool> operatorFunction)
+            => conditionOperators.Add(@operator, ConditionExpression.Make(operatorFunction));
+
+        public void RegisterOperator(string @operator, Func<Expression, Expression, Expression> operatorFunction)
             => conditionOperators.Add(@operator, ConditionExpression.Make(operatorFunction));
 
 

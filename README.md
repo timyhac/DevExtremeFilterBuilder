@@ -89,3 +89,33 @@ filterBuilder.RegisterOperator("anyof", (object value, object parameter) =>
    return allowedValues.Contains(typedValue);
 });
 ```
+
+You may find that an operator implementation you develop can not be translated by the Linq provider. In this case you need load the entities into memory and use the compiled Expression. See [Client versus Server Evaluation](https://docs.microsoft.com/en-us/ef/core/querying/client-eval) for more.
+
+```csharp
+var jsonFilter = "...";
+var predicate = builder.GetExpression<Product>(jsonFilter);
+var actualList = dbContext.Products.AsEnumerable().Where(predicate).ToList();
+```
+
+Alternatively, you can directly supply the Expression:
+
+```csharp
+FilterBuilder builder = new();
+
+builder.RegisterParser("Category", el => el.EnumerateArray().Select(x => (object)Enum.Parse<ProductCategory>(x.GetString())).ToArray());
+
+builder.RegisterOperator("anyof",
+(Expression value, Expression parameter) =>
+{
+    var method = typeof(Enumerable)
+                    .GetMethods()
+                    .Where(m => m.Name == "Contains")
+                    .Single(m => m.GetParameters().Length == 2)
+                    .MakeGenericMethod(typeof(object));
+
+    return Expression.Call(method, parameter, Expression.Convert(value, typeof(object));
+});
+```
+
+Note that the property value will be supplied with the property type, so you may need to cast it to some other type in order for the Expression to be correctly evaluated.
