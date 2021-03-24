@@ -17,6 +17,7 @@ namespace FilterBuilder.Tests
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.UseInMemoryDatabase("test");
+            //optionsBuilder.UseSqlite("Data Source=test.db");
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

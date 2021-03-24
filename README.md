@@ -114,7 +114,7 @@ builder.RegisterOperator("anyof",
                     .Single(m => m.GetParameters().Length == 2)
                     .MakeGenericMethod(typeof(object));
 
-    return Expression.Call(method, parameter, Expression.Convert(value, typeof(object));
+    return Expression.Call(method, parameter, Expression.TypeAs(value, typeof(object));
 });
 ```
 

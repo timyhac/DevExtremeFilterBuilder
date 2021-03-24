@@ -29,6 +29,9 @@ namespace FilterBuilder.Tests.Migrations
                     b.Property<int>("CurrentInventory")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("Description")
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Name");
 
                     b.ToTable("Products");
