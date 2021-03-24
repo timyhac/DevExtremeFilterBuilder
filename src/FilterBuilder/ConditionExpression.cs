@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq.Expressions;
 
-namespace FilterBuilder
+namespace DevExtremeFilterBuilder
 {
 
     class ConditionExpression

@@ -7,7 +7,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Xunit;
 
-namespace FilterBuilder.Tests
+namespace DevExtremeFilterBuilder.Tests
 {
     public class EntityFrameworkTests : IDisposable
     {

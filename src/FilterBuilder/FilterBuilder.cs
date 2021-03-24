@@ -4,7 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text.Json;
 
-namespace FilterBuilder
+namespace DevExtremeFilterBuilder
 {
     public class FilterBuilder
     {

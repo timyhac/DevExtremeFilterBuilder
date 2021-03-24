@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace FilterBuilder.Tests
+namespace DevExtremeFilterBuilder.Tests
 {
     class Product
     {

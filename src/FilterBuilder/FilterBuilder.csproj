@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>DevExtremeFilterBuilder</AssemblyName>
-    <RootNamespace>FilterBuilder</RootNamespace>
+    <RootNamespace>DevExtremeFilterBuilder</RootNamespace>
     <PackageId>DevExtremeFilterBuilder</PackageId>
     <Version>0.0.3-alpha</Version>
     <Authors>timyhac</Authors>

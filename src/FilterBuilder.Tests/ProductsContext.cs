@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FilterBuilder.Tests
+namespace DevExtremeFilterBuilder.Tests
 {
     class ProductsContext : DbContext
     {

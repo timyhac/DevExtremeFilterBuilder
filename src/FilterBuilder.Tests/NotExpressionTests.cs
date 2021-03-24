@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Xunit;
 
-namespace FilterBuilder.Tests
+namespace DevExtremeFilterBuilder.Tests
 {
     public class NotExpressionTests
     {
