@@ -43,15 +43,15 @@ namespace DevExtremeFilterBuilder.Tests
 
             FilterBuilder filterBuilder = new();
 
-            filterBuilder.RegisterParser("Category", el => el.EnumerateArray()
-                                                             .Select(item => Enum.Parse<ProductCategory>(item.GetString()))
-                                                             .ToArray()
-                                                             );
+            //filterBuilder.RegisterParser("Category", el => el.EnumerateArray()
+            //                                                 .Select(item => Enum.Parse<ProductCategory>(item.GetString()))
+            //                                                 .ToArray()
+            //                                                 );
 
             filterBuilder.RegisterOperator("anyof",
             (object value, object parameter) =>
             {
-                var allowedValues = (ProductCategory[])parameter;
+                var allowedValues = ((object[])parameter).Select(x => (ProductCategory)x).ToArray();
                 var actualValue = (ProductCategory)value;
                 return allowedValues.Contains(actualValue);
             });

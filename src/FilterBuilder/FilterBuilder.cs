@@ -29,19 +29,19 @@ namespace DevExtremeFilterBuilder
 
             conditionOperators = new Dictionary<string, ConditionExpression>()
             {
-                {  "<",             ConditionExpression.MakeWithTypeCoercion((a,b) => Expression.LessThan(a,b))},
-                {  "<=",            ConditionExpression.MakeWithTypeCoercion((a,b) => Expression.LessThanOrEqual(a,b))},
-                {  ">",             ConditionExpression.MakeWithTypeCoercion((a,b) => Expression.GreaterThan(a,b))},
-                {  ">=",            ConditionExpression.MakeWithTypeCoercion((a,b) => Expression.GreaterThanOrEqual(a,b))},
-                {  "=",             ConditionExpression.MakeWithTypeCoercion((a,b) => Expression.Equal(a,b))},
-                {  "<>",            ConditionExpression.MakeWithTypeCoercion((a,b) => Expression.NotEqual(a,b))},
-                {  "contains",      ConditionExpression.MakeWithTypeCoercion((a,b) => Expression.Call(a, stringContainsMethodInfo, b))},
-                {  "notcontains",   ConditionExpression.MakeWithTypeCoercion((a,b) => Expression.Not(Expression.Call(a, stringContainsMethodInfo, b)))},
-                {  "startswith",    ConditionExpression.MakeWithTypeCoercion((a,b) => Expression.Call(a, stringStartsWithMethodInfo, b))},
-                {  "endswith",      ConditionExpression.MakeWithTypeCoercion((a,b) => Expression.Call(a, stringEndsWithMethodInfo, b))},
+                {  "<",             ConditionExpression.Make((a,b) => Expression.LessThan(a,b))},
+                {  "<=",            ConditionExpression.Make((a,b) => Expression.LessThanOrEqual(a,b))},
+                {  ">",             ConditionExpression.Make((a,b) => Expression.GreaterThan(a,b))},
+                {  ">=",            ConditionExpression.Make((a,b) => Expression.GreaterThanOrEqual(a,b))},
+                {  "=",             ConditionExpression.Make((a,b) => Expression.Equal(a,b))},
+                {  "<>",            ConditionExpression.Make((a,b) => Expression.NotEqual(a,b))},
+                {  "contains",      ConditionExpression.Make((a,b) => Expression.Call(a, stringContainsMethodInfo, b))},
+                {  "notcontains",   ConditionExpression.Make((a,b) => Expression.Not(Expression.Call(a, stringContainsMethodInfo, b)))},
+                {  "startswith",    ConditionExpression.Make((a,b) => Expression.Call(a, stringStartsWithMethodInfo, b))},
+                {  "endswith",      ConditionExpression.Make((a,b) => Expression.Call(a, stringEndsWithMethodInfo, b))},
                 {  "between",       ConditionExpression.Make((a,b) =>
                     {
-                        var parameters = ((object[])b).Select(x => (double)x).ToArray();
+                        var parameters = ((object[])b).Select(x => Convert.ToDouble(x)).ToArray();
                         var value = Convert.ToDouble(a);
 
                         var lowerBound = parameters[0];
@@ -94,12 +94,12 @@ namespace DevExtremeFilterBuilder
 
             else if (IsConditionExpression(el))
                 return GetConditionExpression(@object, el);
-            
+
             else
                 throw new ArgumentOutOfRangeException("Unknown expression type");
         }
-        
-        
+
+
         bool IsANotExpression(JsonElement el)
             => el.GetArrayLength() == 2 && el[0].GetString() == "!";
 
@@ -111,7 +111,7 @@ namespace DevExtremeFilterBuilder
             return builtInGroupOperators.Contains(@operator);
         }
 
-        
+
 
         bool IsConditionExpression(JsonElement el)
         {
@@ -123,33 +123,38 @@ namespace DevExtremeFilterBuilder
         Expression GetConditionExpression(ParameterExpression @object, JsonElement el)
         {
             var propertyOrFieldName = el[0].GetString();
+            var propertyOrField = GetPropertyOrField(@object, propertyOrFieldName);
             string @operator = el[1].GetString();
-            object parameter = GetParameter(propertyOrFieldName, el[2]);
+            object parameter = GetParameter(propertyOrFieldName, propertyOrField.Type, el[2]);
 
-            return GetConditionExpression(@object, @operator, propertyOrFieldName, parameter);
+            return GetConditionExpression(@object, @operator, propertyOrField, parameter);
         }
 
-        object GetParameter(string propertyOrFieldName, JsonElement el)
+        object GetParameter(string propertyOrFieldName, Type propertyOrFieldType, JsonElement el)
         {
 
             if (customParsers.ContainsKey(propertyOrFieldName))
                 return customParsers[propertyOrFieldName](el);
 
             else
-                return ParseConstant(el);
+                return ParseConstant(propertyOrFieldType, el);
 
         }
 
-        object ParseConstant(JsonElement el)
+        object ParseConstant(Type propertyOrFieldType, JsonElement el)
         {
             switch (el.ValueKind)
             {
-                case JsonValueKind.Array:       return el.EnumerateArray().Select(item => ParseConstant(item)).ToArray();
-                case JsonValueKind.String:      return el.GetString();
-                case JsonValueKind.Number:      return el.GetDouble();
-                case JsonValueKind.True:        return true;
-                case JsonValueKind.False:       return false;
-                case JsonValueKind.Null:        return null;
+                case JsonValueKind.Array:
+                    return el.EnumerateArray().Select(item => ParseConstant(propertyOrFieldType, item)).ToArray();
+                case JsonValueKind.String:
+                    var s = el.GetString();
+                    return propertyOrFieldType.IsEnum ? Enum.Parse(propertyOrFieldType, s) : s;
+                case JsonValueKind.Number:
+                    return Convert.ChangeType(el.GetDouble(), propertyOrFieldType);
+                case JsonValueKind.True: return true;
+                case JsonValueKind.False: return false;
+                case JsonValueKind.Null: return null;
                 case JsonValueKind.Undefined:
                 case JsonValueKind.Object:
                 default:
@@ -158,22 +163,26 @@ namespace DevExtremeFilterBuilder
             }
         }
 
-        Expression GetConditionExpression(ParameterExpression @object, string @operator, string propertyOrFieldName, object parameter)
+        Expression GetPropertyOrField(ParameterExpression @object, string propertyOrFieldName)
         {
-            var propertyExpression = Expression.PropertyOrField(@object, propertyOrFieldName);
+            return Expression.PropertyOrField(@object, propertyOrFieldName);
+        }
+
+        Expression GetConditionExpression(ParameterExpression @object, string @operator, Expression propertyOrField, object parameter)
+        {
             var parameterExpression = Expression.Constant(parameter);
-            return conditionOperators[@operator].Make(propertyExpression, parameterExpression);
+            return conditionOperators[@operator].Make(propertyOrField, parameterExpression);
         }
 
         Expression GetGroupExpression(ParameterExpression @object, JsonElement el, int index = 0)
         {
 
-            if (index == el.GetArrayLength()-1)
+            if (index == el.GetArrayLength() - 1)
                 return GetExpression(@object, el[index]);
 
             var conditionA = GetExpression(@object, el[index]);
             var @operator = el[index + 1].GetString();
-            var conditionB = GetGroupExpression(@object, el, index+2);
+            var conditionB = GetGroupExpression(@object, el, index + 2);
 
             if (@operator == "and")
                 return Expression.MakeBinary(ExpressionType.And, conditionA, conditionB);

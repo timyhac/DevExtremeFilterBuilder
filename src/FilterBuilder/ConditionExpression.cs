@@ -12,14 +12,6 @@ namespace DevExtremeFilterBuilder
 
         public static ConditionExpression Make(Func<Expression, Expression, Expression> func) => new ConditionExpression(func);
 
-        public static ConditionExpression MakeWithTypeCoercion(Func<Expression, Expression, Expression> func)
-        {
-            return new ConditionExpression((property, param) =>
-            {
-                var convertedParam = Expression.Convert(param, property.Type);
-                return func(property, convertedParam);
-            });
-        }
         public static ConditionExpression Make(Func<object, object, bool> func)
         {
             Expression<Func<object, object, bool>> methodExpression = (propertyValue, parameterValue) => func(propertyValue, parameterValue);
@@ -27,7 +19,7 @@ namespace DevExtremeFilterBuilder
                 var prop = Expression.Convert(a, typeof(object));
                 var param = Expression.Convert(b, typeof(object));
                 return Expression.Invoke(methodExpression, prop, param);
-                });
+            });
         }
 
         public Expression Make(Expression operandA, Expression operandB) => _func(operandA, operandB);
