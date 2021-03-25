@@ -6,7 +6,14 @@ It provides the follwing features:
 
 * Support for all built-in operators.
 * Support for custom condition operators.
+* Support for custom condition parameter parsing
 
+![Nuget version](https://img.shields.io/nuget/vpre/DevExtremeFilterBuilder) ![Nuget](https://img.shields.io/nuget/dt/DevExtremeFilterBuilder)
+
+There are three kinds of expressions that are encoded:
+1. Condition Expressions - take the value of a property of an object and compare it to some other value(s).
+2. Group Expressions - which combine other expressions with logical AND/OR.
+3. Not Expressions - which simply negate another expression.
 
 ## Basic usage
 
@@ -66,6 +73,11 @@ filterBuilder.RegisterParser("Category", el =>
 
 
 ## Register a custom condition operator
+
+Within a condtion expression there are three elements:
+1. The object property
+2. The operator
+3. The parameter
 
 DevExtreme Filter Builder supports the ability to define your own operators. For example, the anyof operator which checks that `Category` is any of the provided values.
 
