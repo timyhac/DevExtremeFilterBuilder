@@ -6,6 +6,7 @@ It provides the follwing features:
 
 * Support for all built-in operators.
 * Support for custom condition operators.
+* A default parameter parser for simple types (strings, numbers, enums).
 
 
 ## Basic usage
@@ -33,15 +34,15 @@ var expensiveProducts = allProducts.Where(costGreaterThanOrEqualTo100)
 
 ## Register a custom condition parameter parser
 
-The specification object provides parameters as a JSON Element. These elements have default conversions to CLR values (e.g. `Number` -> `Double`), but it may be more convenient to convert them to custom types.
+The specification object provides parameters as a JSON Element. These elements have default conversions to CLR values (e.g. `Number` -> `Double`), but for custom types they will likely require some parsing.
 
 ```json
-["Category", "=", "Food"]
+["Cost", ">=", "10USD"]
 ```
 
-The following c# snippet shows how to turn a JSON Element into the parameter used by the condition operator.
+The following c# snippet shows how to parse the parameter for a condition against the `Cost` property.
 ```csharp
-filterBuilder.RegisterParser("Category", el => Enum.Parse<ProductCategory>(el.GetString()));
+filterBuilder.RegisterParser("Cost", el => Money.Parse(el.GetString()));
 ```
 
 Depending on the operator, this parameter might be encoded as an array, other times as a single string - to make your parser more flexible it might make sense to customise the logic as appropriate. In this case I've opted to provide either a single `ProductCategory` or an array of `ProductCategory` depending on the JSON type.
@@ -60,7 +61,6 @@ filterBuilder.RegisterParser("Category", el =>
 
     else
         throw new ArgumentOutOfRangeException();
-
 });
 ```
 
@@ -94,16 +94,14 @@ You may find that an operator implementation you develop can not be translated b
 
 ```csharp
 var jsonFilter = "...";
-var predicate = builder.GetExpression<Product>(jsonFilter);
-var actualList = dbContext.Products.AsEnumerable().Where(predicate).ToList();
+var predicate = builder.GetExpression<Product>(jsonFilter).Compile();
+var actualList = dbContext.Products.AsEnumerable().Where(predicate);
 ```
 
 Alternatively, you can directly supply the Expression:
 
 ```csharp
 FilterBuilder builder = new();
-
-builder.RegisterParser("Category", el => el.EnumerateArray().Select(x => (object)Enum.Parse<ProductCategory>(x.GetString())).ToArray());
 
 builder.RegisterOperator("anyof",
 (Expression value, Expression parameter) =>
