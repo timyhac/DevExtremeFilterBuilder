@@ -18,7 +18,7 @@ namespace DevExtremeFilterBuilder.Tests
 
             var expectedFilteredList = new List<Product>()
             {
-                products.Product0, products.Product2, products.Product11
+                products[0], products[2], products[11]
             };
 
             FilterBuilder builder = new();
@@ -38,16 +38,10 @@ namespace DevExtremeFilterBuilder.Tests
 
             var expectedFilteredList = new List<Product>
             {
-                products.Product0, products.Product1, products.Product2, products.Product11, products.Product12, products.Product13
+                products[0], products[1], products[2], products[11], products[12], products[13]
             };
 
             FilterBuilder filterBuilder = new();
-
-            //filterBuilder.RegisterParser("Category", el => el.EnumerateArray()
-            //                                                 .Select(item => Enum.Parse<ProductCategory>(item.GetString()))
-            //                                                 .ToArray()
-            //                                                 );
-
             filterBuilder.RegisterOperator("anyof",
             (object value, object parameter) =>
             {
@@ -64,14 +58,33 @@ namespace DevExtremeFilterBuilder.Tests
         }
 
         [Fact]
-        public void Between_condition()
+        public void Equal_to_enum_using_default_parser()
+        {
+
+            var jsonFilter = @"[""Category"", ""="", ""Food""]";
+
+            var expectedFilteredList = new List<Product>
+            {
+                products[0], products[1], products[2]
+            };
+
+            FilterBuilder filterBuilder = new();
+
+            var predicate = filterBuilder.GetExpression<Product>(jsonFilter).Compile();
+            var filteredList = products.All.Where(predicate);
+
+            Assert.Equal(expectedFilteredList, filteredList);
+        }
+
+        [Fact]
+        public void Between_two_numbers()
         {
 
             var jsonFilter = @"[""Cost"", ""between"", [100, 200]]";
 
             var expectedFilteredList = new List<Product>()
             {
-                products.Product3, products.Product4, products.Product11, products.Product13
+                products[3], products[4], products[11], products[13]
             };
 
             FilterBuilder builder = new();

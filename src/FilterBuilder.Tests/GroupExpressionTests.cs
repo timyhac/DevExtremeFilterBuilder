@@ -25,7 +25,7 @@ namespace DevExtremeFilterBuilder.Tests
 
             var expectedFilteredList = new List<Product>()
             {
-                products.Product3, products.Product4
+                products[3], products[4]
             };
 
             FilterBuilder builder = new();
@@ -54,7 +54,7 @@ namespace DevExtremeFilterBuilder.Tests
 
             var expectedFilteredList = new List<Product>()
             {
-                products.Product3
+                products[3]
             };
 
             FilterBuilder builder = new();
@@ -85,7 +85,7 @@ namespace DevExtremeFilterBuilder.Tests
 
             var expectedFilteredList = new List<Product>()
             {
-                products.Product3, products.Product4, products.Product11, products.Product13
+                products[3], products[4], products[11], products[13]
             };
 
             FilterBuilder builder = new();

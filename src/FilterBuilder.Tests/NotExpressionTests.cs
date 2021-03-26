@@ -24,7 +24,7 @@ namespace DevExtremeFilterBuilder.Tests
 
             var expectedFilteredList = new List<Product>()
             {
-                products.Product5, products.Product6, products.Product7, products.Product8, products.Product9
+                products[5], products[6], products[7], products[8], products[9]
             };
 
             FilterBuilder builder = new();
