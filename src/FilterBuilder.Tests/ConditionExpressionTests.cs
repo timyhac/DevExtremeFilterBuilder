@@ -95,5 +95,25 @@ namespace DevExtremeFilterBuilder.Tests
             Assert.Equal(expectedFilteredList, actualFilteredList);
 
         }
+
+        [Fact]
+        public void Sub_property()
+        {
+
+            var jsonFilter = @"[""Manufacturer.Name"", ""contains"", ""Xav""]";
+
+            var expectedFilteredList = new List<Product>()
+            {
+                products[0], products[1], products[2]
+            };
+
+            FilterBuilder builder = new();
+            var predicate = builder.GetExpression<Product>(jsonFilter).Compile();
+
+            var actualFilteredList = products.All.Where(predicate).ToList();
+
+            Assert.Equal(expectedFilteredList, actualFilteredList);
+
+        }
     }
 }
