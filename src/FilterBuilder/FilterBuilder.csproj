@@ -5,7 +5,7 @@
     <AssemblyName>DevExtremeFilterBuilder</AssemblyName>
     <RootNamespace>DevExtremeFilterBuilder</RootNamespace>
     <PackageId>DevExtremeFilterBuilder</PackageId>
-    <Version>0.0.4</Version>
+    <Version>0.0.5</Version>
     <Authors>timyhac</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageDescription>Creates LINQ Expressions from DevExtreme's FilterBuilder filter specification object</PackageDescription>
