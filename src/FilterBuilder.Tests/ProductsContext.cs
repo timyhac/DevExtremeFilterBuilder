@@ -13,17 +13,25 @@ namespace DevExtremeFilterBuilder.Tests
     {
                 
         public DbSet<Product> Products { get; set; }
+        public DbSet<Manufacturer> Manufacturers { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseInMemoryDatabase("test");
-            //optionsBuilder.UseSqlite("Data Source=test.db");
+            //optionsBuilder.UseInMemoryDatabase("test");
+            optionsBuilder.UseSqlite("Data Source=test.db");
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Product>()
                 .HasKey(c => c.Name);
+
+            modelBuilder.Entity<Product>()
+                .HasOne(b => b.Manufacturer);
+
+            modelBuilder.Entity<Product>()
+                .Navigation(b => b.Manufacturer)
+                .UsePropertyAccessMode(PropertyAccessMode.Property);
         }
     }
 

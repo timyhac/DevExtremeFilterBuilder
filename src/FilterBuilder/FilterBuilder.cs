@@ -165,7 +165,12 @@ namespace DevExtremeFilterBuilder
 
         Expression GetPropertyOrField(ParameterExpression @object, string propertyOrFieldName)
         {
-            return Expression.PropertyOrField(@object, propertyOrFieldName);
+            Expression propertyOrFieldExpression = @object;
+
+            foreach (var member in propertyOrFieldName.Split('.'))
+                propertyOrFieldExpression = Expression.PropertyOrField(propertyOrFieldExpression, member);
+            
+            return propertyOrFieldExpression;
         }
 
         Expression GetConditionExpression(ParameterExpression @object, string @operator, Expression propertyOrField, object parameter)

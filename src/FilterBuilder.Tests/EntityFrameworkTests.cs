@@ -1,10 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
 using Xunit;
 
 namespace DevExtremeFilterBuilder.Tests
@@ -13,38 +11,21 @@ namespace DevExtremeFilterBuilder.Tests
     {
 
         readonly ProductsContext dbContext;
-        readonly List<Product> items = new()
-        {
-            new() { Name = "Sauce",                 Description =   "",         CurrentInventory = 9,   Cost = 4.99f,   Category = ProductCategory.Food },
-            new() { Name = "Beans",                 Description =   "",         CurrentInventory = 12,  Cost = 1.50f,   Category = ProductCategory.Food },
-            new() { Name = "Chocolate",             Description =   "",         CurrentInventory = 8,   Cost = 3.20f,   Category = ProductCategory.Food },
-            new() { Name = "SuperHD Video Player",  Description =   "",         CurrentInventory = 8,   Cost = 175,     Category = ProductCategory.Electronics },
-            new() { Name = "HD Video Player",       Description =   "",         CurrentInventory = 3,   Cost = 110,     Category = ProductCategory.Electronics },
-            new() { Name = "SuperLED 50",           Description =   "",         CurrentInventory = 0,   Cost = 775,     Category = ProductCategory.Electronics },
-            new() { Name = "SuperLED 42",           Description =   "",         CurrentInventory = 0,   Cost = 675,     Category = ProductCategory.Electronics },
-            new() { Name = "SuperLCD 55",           Description =   null,       CurrentInventory = 1,   Cost = 745f,    Category = ProductCategory.Electronics },
-            new() { Name = "SuperLCD 42",           Description =   "",         CurrentInventory = 3,   Cost = 710f,    Category = ProductCategory.Electronics },
-            new() { Name = "SuperLCD 70",           Description =   "",         CurrentInventory = 2,   Cost = 2125f,   Category = ProductCategory.Electronics },
-            new() { Name = "DesktopLED 19",         Description =   "",         CurrentInventory = 1,   Cost = 70f,     Category = ProductCategory.Electronics },
-            new() { Name = "Table",                 Description =   "Wood",     CurrentInventory = 3,   Cost = 120f,    Category = ProductCategory.Furniture },
-            new() { Name = "Chair",                 Description =   "Wood",     CurrentInventory = 8,   Cost = 70f,     Category = ProductCategory.Furniture },
-            new() { Name = "Deluxe Office Chair",   Description =   "Plastic",  CurrentInventory = 2,   Cost = 199.99f, Category = ProductCategory.Furniture },
-        };
-
+        readonly Products items = new Products();
 
         public EntityFrameworkTests()
         {
-
             dbContext = new ProductsContext();
             dbContext.Database.EnsureCreated();
 
-            dbContext.Products.AddRange(items);
+            dbContext.Products.AddRange(items.All);
             dbContext.SaveChanges();
         }
 
         public void Dispose()
         {
             dbContext.Products.RemoveRange(dbContext.Products);
+            dbContext.Manufacturers.RemoveRange(dbContext.Manufacturers);
             dbContext.SaveChanges();
         }
 
@@ -62,7 +43,7 @@ namespace DevExtremeFilterBuilder.Tests
             FilterBuilder builder = new();
             var predicate = builder.GetExpression<Product>(jsonFilter);
 
-
+            var query = dbContext.Products.Where(predicate).ToQueryString();
             var actualList = dbContext.Products.Where(predicate).ToList();
 
             Assert.True(ContainSameElements(expectedFilteredList, actualList));
@@ -104,7 +85,30 @@ namespace DevExtremeFilterBuilder.Tests
 
             var predicate = builder.GetExpression<Product>(jsonFilter);
 
-            var actualList = dbContext.Products.Where(predicate);
+            var query = dbContext.Products.Where(predicate).ToQueryString();
+            var actualList = dbContext.Products.Where(predicate).ToList();
+
+            Assert.True(ContainSameElements(expectedFilteredList, actualList));
+
+        }
+
+        [Fact]
+        public void Enum_not_equal()
+        {
+
+            var jsonFilter = @"[""Category"", ""<>"", ""Electronics""]";
+
+            var expectedFilteredList = new List<Product>()
+            {
+                items[0], items[1], items[2], items[11], items[12], items[13]
+            };
+
+            FilterBuilder builder = new();
+
+            var predicate = builder.GetExpression<Product>(jsonFilter);
+
+            var query = dbContext.Products.Where(predicate).ToQueryString();
+            var actualList = dbContext.Products.Where(predicate).ToList();
 
             Assert.True(ContainSameElements(expectedFilteredList, actualList));
 
@@ -123,7 +127,6 @@ namespace DevExtremeFilterBuilder.Tests
 
             FilterBuilder builder = new();
 
-            builder.RegisterParser("Category", el => el.EnumerateArray().Select(x => (object)Enum.Parse<ProductCategory>(x.GetString())).ToArray());
             builder.RegisterOperator("anyof",
             (Expression value, Expression parameter) =>
             {
@@ -140,7 +143,8 @@ namespace DevExtremeFilterBuilder.Tests
 
             var predicate = builder.GetExpression<Product>(jsonFilter);
 
-            var actualList = dbContext.Products.Where(predicate);
+            var query = dbContext.Products.Where(predicate).ToQueryString();
+            var actualList = dbContext.Products.Where(predicate).ToList();
 
             Assert.True(ContainSameElements(expectedFilteredList, actualList));
 
