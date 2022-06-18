@@ -195,6 +195,9 @@ namespace DevExtremeFilterBuilder
             else if (@operator == "or")
                 return Expression.MakeBinary(ExpressionType.Or, conditionA, conditionB);
 
+            else if (@operator == "!")
+                return Expression.MakeBinary(ExpressionType.Not, conditionA, conditionB);
+
             else
                 throw new NotImplementedException();
 
